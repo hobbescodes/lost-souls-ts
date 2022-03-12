@@ -3,13 +3,13 @@ import Head from "next/head";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { useMoralis } from "react-moralis";
 import { createClient } from "urql";
 import ThemeChanger from "../components/ThemeChanger";
 import Countdown from "react-countdown";
 import { ArrowLeftIcon } from "@heroicons/react/outline";
 import { useRecoilState } from "recoil";
 import { nftsState } from "../atoms/NftsAtom";
+import { ethers } from "ethers";
 
 const Whales: NextPage = () => {
   const empty: string[] = [];
@@ -17,7 +17,6 @@ const Whales: NextPage = () => {
   const [finalWhales, setFinalWhales] = useState(empty);
   const [isVisible, setIsVisible] = useState(false);
   const [nfts, setNfts] = useRecoilState(nftsState);
-  const { Moralis } = useMoralis();
   const router = useRouter();
 
   //Truncates an address to the form of 0xEEEEE..EEEEEEE
@@ -28,16 +27,12 @@ const Whales: NextPage = () => {
   //Filters through a subgraph query and collects addresses that own 44+ Lost Souls and resolves each address to an ENS domain when possible
   const collectWhales = (callback: any) => {
     const getWhaleAddress = async (whale: string) => {
-      await Moralis.start({
-        serverUrl: process.env.NEXT_PUBLIC_SERVER_URL,
-        appId: process.env.NEXT_PUBLIC_APP_ID,
-      });
-
-      const options = { address: whale };
-      try {
-        const resolve = await Moralis.Web3API.resolve.resolveAddress(options);
-        whales.push(resolve.name);
-      } catch {
+      //@ts-ignore
+      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+      const resolve = await web3Provider.lookupAddress(whale);
+      if (resolve != null) {
+        whales.push(resolve);
+      } else {
         whales.push(whale);
       }
     };
@@ -143,7 +138,7 @@ const Whales: NextPage = () => {
                   Click below to view all holders that own 44+ Lost Souls:
                 </h1>
               </div>
-              <Countdown date={Date.now() + 10000}>
+              <Countdown date={Date.now() + 5000}>
                 <div className="relative rounded-lg border border-[#14aed0] transition-all duration-150 ease-out hover:scale-110 hover:cursor-pointer dark:border-[#6a3fe4]">
                   <button
                     className="relative items-center justify-center rounded-lg bg-gray-50 px-3 py-2 text-sm text-black dark:bg-zinc-900 dark:text-white"

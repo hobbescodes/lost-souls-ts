@@ -1,8 +1,8 @@
 import { Menu, Transition } from "@headlessui/react";
 import { ChevronDownIcon, SearchIcon } from "@heroicons/react/outline";
+import { ethers } from "ethers";
 import { isAddress } from "ethers/lib/utils";
 import { Fragment, useEffect, useState } from "react";
-import { useMoralis } from "react-moralis";
 import { useRecoilState } from "recoil";
 import { limitState } from "../atoms/LimitAtom";
 import { nftsState } from "../atoms/NftsAtom";
@@ -22,7 +22,6 @@ import { errorResultState } from "../atoms/ErrorResult";
 function Navigation() {
   const empty: string[] = [];
   const [tokenOrAddress, setTokenOrAddress] = useState("");
-  const { Moralis } = useMoralis();
   const [nfts, setNfts] = useRecoilState(nftsState);
   const [finalAddressNfts, setFinalAddressNfts] = useState(empty);
   const [limit, setLimit] = useRecoilState(limitState);
@@ -150,7 +149,7 @@ function Navigation() {
         setNfts(response);
       })
       .catch((err) => console.error(err));
-    setLimit(10);
+    setLimit(44);
     setTotalQuarks(0);
     setTotalLand(0);
   };
@@ -173,7 +172,7 @@ function Navigation() {
   //OnClick for Address: 1) resets variables 2) Checks if input is a valid address or ENS domain, if not resets other variables
   const retrieveAddressNFTs = async () => {
     setNfts([]);
-    setLimit(10);
+    setLimit(44);
     setTotalQuarks(0);
     setErrorResult(false);
 
@@ -182,7 +181,8 @@ function Navigation() {
       addressDetails(tokenOrAddress);
     } else {
       try {
-        const web3Provider = await Moralis.enableWeb3();
+        //@ts-ignore
+        const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
         const address = await web3Provider.resolveName(tokenOrAddress);
         if (address != null) {
           addressNFTs(address);
@@ -221,7 +221,7 @@ function Navigation() {
   //OnClick for Filter menu: 1) resets variables, calls the filter function for given trait
   const retrieveFilteredNFTs = (index: number, traitValue: string) => {
     setErrorResult(false);
-    setLimit(10);
+    setLimit(44);
     setTotalQuarks(0);
     setTotalLand(0);
     filteredNFTs(index, traitValue);

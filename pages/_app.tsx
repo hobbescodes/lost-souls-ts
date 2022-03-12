@@ -8,12 +8,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider attribute="class">
       <RecoilRoot>
-        <MoralisProvider
-          appId={process.env.NEXT_PUBLIC_APP_ID || ""}
-          serverUrl={process.env.NEXT_PUBLIC_SERVER_URL || ""}
-        >
-          <Component {...pageProps} />
-        </MoralisProvider>
+        <Component {...pageProps} />
       </RecoilRoot>
     </ThemeProvider>
   );

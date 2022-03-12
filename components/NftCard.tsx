@@ -2,7 +2,6 @@ import Image from "next/image";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useEffect, useState } from "react";
 import { LinkIcon as OpenSea, XIcon } from "@heroicons/react/outline";
-import { useMoralis } from "react-moralis";
 import { createClient } from "urql";
 
 function NftCard({ nft }: any) {
@@ -12,7 +11,6 @@ function NftCard({ nft }: any) {
   const [tokenPrice, setTokenPrice] = useState("");
   const [rarityClass, setRarityClass] = useState("");
   const [nftQuarks, setNftQuarks] = useState(0);
-  const { Moralis } = useMoralis();
 
   //Opens Modal for each NFT and triggers function to find owner of clicked NFT + that NFTs details
   function openModal() {
@@ -48,19 +46,8 @@ function NftCard({ nft }: any) {
     });
 
     async function fetchData() {
-      await Moralis.start({
-        serverUrl: process.env.NEXT_PUBLIC_SERVER_URL,
-        appId: process.env.NEXT_PUBLIC_APP_ID,
-      });
-
       const response = await client.query(query).toPromise();
-      const options = { address: response.data?.tokens[0].owner.id };
-      try {
-        const resolve = await Moralis.Web3API.resolve.resolveAddress(options);
-        setOwner(resolve.name);
-      } catch {
-        setOwner(response.data?.tokens[0].owner.id);
-      }
+      setOwner(response.data?.tokens[0].owner.id);
     }
 
     fetchData();

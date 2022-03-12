@@ -1,4 +1,3 @@
-import { useMoralis } from "react-moralis";
 import NftCard from "./NftCard";
 import Loader from "./Loader";
 import { useRecoilState } from "recoil";
@@ -20,11 +19,10 @@ function Results() {
   const [uncommonPrice, setUncommonPrice] = useState("");
   const [rarePrice, setRarePrice] = useState("");
   const [superRarePrice, setSuperRarePrice] = useState("");
-  const { Moralis } = useMoralis();
 
   //Updates the limit of NFTs displayed
   function updateLimit() {
-    setLimit(limit + 10);
+    setLimit(limit + 44);
   }
 
   // Gets all nfts in collection
