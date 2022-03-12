@@ -8,12 +8,15 @@ import { createClient } from "urql";
 import ThemeChanger from "../components/ThemeChanger";
 import Countdown from "react-countdown";
 import { ArrowLeftIcon } from "@heroicons/react/outline";
+import { useRecoilState } from "recoil";
+import { nftsState } from "../atoms/NftsAtom";
 
 const Whales: NextPage = () => {
   const empty: string[] = [];
   const [whales, setWhales] = useState(empty);
   const [finalWhales, setFinalWhales] = useState(empty);
   const [isVisible, setIsVisible] = useState(false);
+  const [nfts, setNfts] = useRecoilState(nftsState);
   const { Moralis } = useMoralis();
   const router = useRouter();
 
@@ -73,6 +76,11 @@ const Whales: NextPage = () => {
 
   const getWhales = () => {
     setFinalWhales(whales);
+  };
+
+  const goHome = () => {
+    setNfts([]);
+    router.push("/");
   };
 
   useEffect(() => {
@@ -152,7 +160,7 @@ const Whales: NextPage = () => {
         </div>
       </div>
       <div
-        onClick={() => router.push("/")}
+        onClick={() => goHome()}
         className="absolute top-1 -left-3 flex w-40 cursor-pointer items-center justify-center space-x-2 font-header"
       >
         <ArrowLeftIcon className="h-6 w-6" />

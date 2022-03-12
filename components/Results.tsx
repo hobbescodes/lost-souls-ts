@@ -15,7 +15,7 @@ function Results() {
   const [totalQuarks, setTotalQuarks] = useRecoilState(totalQuarksState);
   const [totalLand, setTotalLand] = useRecoilState(totalLandState);
   const [errorResult, setErrorResult] = useRecoilState(errorResultState);
-  const [nft, setNft] = useRecoilState(nftsState);
+  const [nfts, setNfts] = useRecoilState(nftsState);
   const [commonPrice, setCommonPrice] = useState("");
   const [uncommonPrice, setUncommonPrice] = useState("");
   const [rarePrice, setRarePrice] = useState("");
@@ -27,16 +27,20 @@ function Results() {
     setLimit(limit + 10);
   }
 
-  //Queries full database to get all NFTs in the collection
-  const allNFTs = async () => {
-    await Moralis.start({
-      serverUrl: process.env.NEXT_PUBLIC_SERVER_URL,
-      appId: process.env.NEXT_PUBLIC_APP_ID,
-    });
-    const nfts = await Moralis.Cloud.run("LostSouls");
+  // Gets all nfts in collection
+  const getNFTs = () => {
+    const options = { method: "GET" };
 
-    let allNFTs = nfts;
-    setNft(allNFTs);
+    fetch(
+      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
+      options
+    )
+      .then((response) => response.json())
+      .then((response) => {
+        // console.log(response);
+        setNfts(response);
+      })
+      .catch((err) => console.error(err));
   };
 
   //Fetch floor prices for each rarity class using the Ecto API
@@ -60,19 +64,15 @@ function Results() {
 
   //Fetch all NFTs, (re)initializes quarks, and collects stats on mount
   useEffect(() => {
-    allNFTs();
     setTotalQuarks(0);
     setTotalLand(0);
     rarityPrices();
+    getNFTs();
   }, []);
-
-  useEffect(() => {
-    console.log(nft);
-  }, [nft]);
 
   return (
     <div className="relative mx-auto mb-12 flex flex-col items-center space-y-4">
-      {nft != [] && !errorResult ? (
+      {nfts != [] && !errorResult ? (
         <>
           {totalQuarks != 0 ? (
             <div className="flex flex-col space-y-3 md:flex-row md:space-y-0 md:space-x-2">
@@ -97,7 +97,7 @@ function Results() {
             </div>
           ) : (
             <div>
-              {nft.length > 1 ? (
+              {nfts.length > 1 ? (
                 <div className="flex flex-col items-center justify-center space-y-1">
                   <div className="flex flex-col space-y-3 md:flex-row md:space-y-0 md:space-x-2">
                     <div className="flex items-center justify-center space-x-2">
@@ -186,22 +186,22 @@ function Results() {
               ) : null}
             </div>
           )}
-          {nft.length > 0 ? (
+          {nfts.length > 0 ? (
             <>
               <div
                 className={`justify-center p-4 ${
-                  nft.length > 1 &&
+                  nfts.length > 1 &&
                   "grid max-w-[1500px] flex-wrap sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:flex"
                 }`}
               >
-                {nft.slice(0, limit).map((nft: any) => (
+                {nfts.slice(0, limit).map((nft: any) => (
                   <NftCard key={nft.id} nft={nft} />
                 ))}
               </div>
               <div
                 className={`relative rounded-lg border border-[#14aed0] transition-all duration-150 ease-out hover:scale-110 hover:cursor-pointer dark:border-[#6a3fe4] ${
-                  (nft.length <= 1 && "hidden") ||
-                  (nft.length <= limit && "hidden")
+                  (nfts.length <= 1 && "hidden") ||
+                  (nfts.length <= limit && "hidden")
                 }`}
               >
                 <button

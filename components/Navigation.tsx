@@ -1,7 +1,7 @@
 import { Menu, Transition } from "@headlessui/react";
 import { ChevronDownIcon, SearchIcon } from "@heroicons/react/outline";
 import { isAddress } from "ethers/lib/utils";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useMoralis } from "react-moralis";
 import { useRecoilState } from "recoil";
 import { limitState } from "../atoms/LimitAtom";
@@ -14,7 +14,6 @@ import {
   headware,
   faces,
 } from "../exports/traitArray";
-import { contractAddress } from "../exports/contractAddress";
 import ThemeChanger from "./ThemeChanger";
 import { totalLandState } from "../atoms/LandAtom";
 import { useRouter } from "next/router";
@@ -24,12 +23,13 @@ function Navigation() {
   const empty: string[] = [];
   const [tokenOrAddress, setTokenOrAddress] = useState("");
   const { Moralis } = useMoralis();
-  const [nft, setNft] = useRecoilState(nftsState);
+  const [nfts, setNfts] = useRecoilState(nftsState);
+  const [finalAddressNfts, setFinalAddressNfts] = useState(empty);
   const [limit, setLimit] = useRecoilState(limitState);
-  const [tokenIds, setTokenIds] = useState(empty);
   const [totalQuarks, setTotalQuarks] = useRecoilState(totalQuarksState);
   const [totalLand, setTotalLand] = useRecoilState(totalLandState);
   const [errorResult, setErrorResult] = useRecoilState(errorResultState);
+  const [addressTokenIds, setAddressTokenIds] = useState(empty);
   const router = useRouter();
 
   const allHeadware = headware.sort();
@@ -39,68 +39,117 @@ function Navigation() {
   const allShirts = shirts.sort();
 
   // Get individual NFT
-  const getNFT = async () => {
-    const nfts = await Moralis.Cloud.run("LostSouls");
-    let selectedNFT = nfts.filter(
-      (nft: any) => nft.attributes.tokenId === tokenOrAddress
-    );
-    setNft(selectedNFT);
+  const getNFT = (tokenId: number) => {
+    setNfts([]);
+
+    const options = { method: "GET" };
+
+    fetch(
+      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
+      options
+    )
+      .then((response) => response.json())
+      .then((response) => {
+        let singleNFT = response.filter((nft: any) => nft.id === tokenId);
+        setNfts(singleNFT);
+      })
+      .catch((err) => console.error(err));
   };
 
   // Filter NFTs by specified trait value
   const filteredNFTs = async (index: number, traitValue: string) => {
-    const nfts = await Moralis.Cloud.run("LostSouls");
+    setNfts([]);
 
-    let filteredNFTs = nfts.filter(
-      (nft: any) => nft.attributes.attributes[index].value === traitValue
-    );
-    setNft(filteredNFTs);
+    const options = { method: "GET" };
+
+    fetch(
+      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
+      options
+    )
+      .then((response) => response.json())
+      .then((response) => {
+        let filteredNFTs = response.filter(
+          (nft: any) => nft.attributes[index].value === traitValue
+        );
+        setNfts(filteredNFTs);
+      })
+      .catch((err) => console.error(err));
   };
 
-  // Get NFTs for a given wallet address
+  // Get Token IDs of each Lost Soul for a given wallet address
   const addressNFTs = async (address: string) => {
-    await Moralis.start({
-      serverUrl: process.env.NEXT_PUBLIC_SERVER_URL,
-      appId: process.env.NEXT_PUBLIC_APP_ID,
-    });
-    const options = {
-      address,
-      token_address: contractAddress,
-    };
-    const NFTs = await Moralis.Web3API.account.getNFTsForContract(options);
+    const options = { method: "GET" };
+    let addressTokenIds: string[] = [];
 
-    if (NFTs.result == []) {
-      setErrorResult(true);
-    } else {
-      NFTs.result?.map((nft) => tokenIds.push(nft.token_id));
+    fetch(
+      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/address/${address}`,
+      options
+    )
+      .then((response) => response.json())
+      .then((response) => {
+        // console.log(response);
+        for (let i = 0; i < response.ownedNotListed.length; i++) {
+          addressTokenIds.push(response.ownedNotListed[i]);
+        }
+        setAddressTokenIds(addressTokenIds);
+        fetchTotalAddressNFTs(addressTokenIds);
+      })
+      .catch((err) => console.error(err));
+  };
 
-      const nfts = await Moralis.Cloud.run("LostSouls");
+  //Given an array of token IDs, fetches information about said NFTs for a given wallet
+  const fetchTotalAddressNFTs = (tokenIdArray: string[]) => {
+    const options = { method: "GET" };
+    let totalAddressNfts: any[] = [];
 
-      let filteredNFTs = nfts.filter((nft: any) => {
-        for (let i = 0; i < tokenIds.length; i++) {
-          if (nft.attributes.tokenId === tokenIds[i]) {
-            return nft;
+    fetch(
+      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
+      options
+    )
+      .then((response) => response.json())
+      .then((response) => {
+        for (let i = 0; i < tokenIdArray.length; i++) {
+          for (let j = 0; j < response.length; j++) {
+            if (response[j].id == Number(tokenIdArray[i])) {
+              totalAddressNfts.push(response[j]);
+            }
           }
         }
-      });
-
-      let totalQuarks = 0;
-      filteredNFTs.forEach((nft: any) => {
-        totalQuarks += nft.attributes.quarks;
-      });
-
-      setNft(filteredNFTs);
-      setTotalQuarks(totalQuarks);
-      setTokenIds([]);
-    }
+        let finalNfts = totalAddressNfts.sort(
+          (a, b) => a.rarity_rank - b.rarity_rank
+        );
+        let totalQuarks = 0;
+        totalAddressNfts.forEach((nft) => {
+          if (nft.rarity_rank < 22) {
+            totalQuarks += 400000;
+          } else if (nft.rarity_rank > 21 && nft.rarity_rank < 1402) {
+            totalQuarks += 100000;
+          } else if (nft.rarity_rank > 1401 && nft.rarity_rank < 5001) {
+            totalQuarks += 10000;
+          } else {
+            totalQuarks += 5000;
+          }
+        });
+        //@ts-ignore
+        setNfts(finalNfts);
+        setTotalQuarks(totalQuarks);
+      })
+      .catch((err) => console.error(err));
   };
 
   //Reset function to eliminate any filters
   const resetNFTs = async () => {
-    const nfts = await Moralis.Cloud.run("LostSouls");
+    const options = { method: "GET" };
 
-    let allNFTs = nfts;
-    setNft(allNFTs);
+    fetch(
+      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
+      options
+    )
+      .then((response) => response.json())
+      .then((response) => {
+        setNfts(response);
+      })
+      .catch((err) => console.error(err));
     setLimit(10);
     setTotalQuarks(0);
     setTotalLand(0);
@@ -116,7 +165,6 @@ function Navigation() {
     )
       .then((response) => response.json())
       .then((response) => {
-        //console.log(response);
         setTotalLand(response.totalAvailableLand);
       })
       .catch((err) => console.error(err));
@@ -124,8 +172,9 @@ function Navigation() {
 
   //OnClick for Address: 1) resets variables 2) Checks if input is a valid address or ENS domain, if not resets other variables
   const retrieveAddressNFTs = async () => {
-    setNft([]);
+    setNfts([]);
     setLimit(10);
+    setTotalQuarks(0);
     setErrorResult(false);
 
     if (isAddress(tokenOrAddress) == true) {
@@ -155,14 +204,13 @@ function Navigation() {
   const retrieveNFT = () => {
     setTotalQuarks(0);
     setTotalLand(0);
-    setNft([]);
     setErrorResult(false);
     if (
       Number(tokenOrAddress) % 1 == 0 &&
       Number(tokenOrAddress) > 0 &&
       Number(tokenOrAddress) < 10000
     ) {
-      getNFT();
+      getNFT(Number(tokenOrAddress));
     } else {
       setTotalQuarks(0);
       setTotalLand(0);
@@ -172,7 +220,6 @@ function Navigation() {
 
   //OnClick for Filter menu: 1) resets variables, calls the filter function for given trait
   const retrieveFilteredNFTs = (index: number, traitValue: string) => {
-    setNft([]);
     setErrorResult(false);
     setLimit(10);
     setTotalQuarks(0);
@@ -182,7 +229,6 @@ function Navigation() {
 
   //OnClick for Reset: first setNft(undefined) to clear nfts
   const reset = () => {
-    setNft([]);
     resetNFTs();
     setErrorResult(false);
   };

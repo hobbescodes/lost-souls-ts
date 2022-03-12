@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { LinkIcon as OpenSea, XIcon } from "@heroicons/react/outline";
 import { useMoralis } from "react-moralis";
 import { createClient } from "urql";
@@ -10,13 +10,15 @@ function NftCard({ nft }: any) {
   const [owner, setOwner] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const [tokenPrice, setTokenPrice] = useState("");
+  const [rarityClass, setRarityClass] = useState("");
+  const [nftQuarks, setNftQuarks] = useState(0);
   const { Moralis } = useMoralis();
 
-  //Opens Modal for each NFT and triggers function to find owner of clicked NFT
+  //Opens Modal for each NFT and triggers function to find owner of clicked NFT + that NFTs details
   function openModal() {
     setIsOpen(true);
-    tokenDetails(nft.attributes.tokenId);
-    findOwner(nft.attributes.tokenId);
+    tokenDetails(nft.id);
+    findOwner(nft.id);
   }
 
   //Closes Modal for each NFT, resets variables
@@ -97,22 +99,49 @@ function NftCard({ nft }: any) {
       .catch((err) => console.error(err));
   };
 
+  //Uses IPFS gateway in order to render image
+  const resolveURL = (url: string) => {
+    return url.replace("ipfs://", "https://gateway.ipfs.io/ipfs/");
+  };
+
+  //Defines rarity class and quark value for an individual NFT
+  const classRarity = (nft: any) => {
+    if (nft.rarity_rank < 22) {
+      setRarityClass("Super Rare");
+      setNftQuarks(400000);
+    } else if (nft.rarity_rank > 21 && nft.rarity_rank < 1402) {
+      setRarityClass("Rare");
+      setNftQuarks(100000);
+    } else if (nft.rarity_rank > 1401 && nft.rarity_rank < 5001) {
+      setRarityClass("Uncommon");
+      setNftQuarks(10000);
+    } else {
+      setRarityClass("Common");
+      setNftQuarks(5000);
+    }
+  };
+
+  //Finds rarity class and quark value for a given NFT on state change
+  useEffect(() => {
+    classRarity(nft);
+  }, [nft]);
+
   return (
     <div>
       <div
         className={`relative m-4 shadow-sm transition-all duration-150 ease-out hover:scale-110 hover:cursor-pointer ${
-          nft.attributes.class === "Super Rare" && "shadow-orange-400"
-        } ${nft.attributes.class === "Rare" && "shadow-green-400"} ${
-          nft.attributes.class === "Uncommon" && "shadow-blue-400"
-        } ${nft.attributes.class === "Common" && "shadow-purple-400"}`}
+          rarityClass === "Super Rare" && "shadow-orange-400"
+        } ${rarityClass === "Rare" && "shadow-green-400"} ${
+          rarityClass === "Uncommon" && "shadow-blue-400"
+        } ${rarityClass === "Common" && "shadow-purple-400"}`}
       >
         <div
           className={`text-md absolute top-3 -right-1 h-7 w-[2px] rounded-r-lg ${
-            nft.attributes.class === "Super Rare" && "bg-orange-400"
-          } ${nft.attributes.class === "Rare" && "bg-green-400"} ${
-            nft.attributes.class === "Uncommon" && "bg-blue-400"
+            rarityClass === "Super Rare" && "bg-orange-400"
+          } ${rarityClass === "Rare" && "bg-green-400"} ${
+            rarityClass === "Uncommon" && "bg-blue-400"
           } ${
-            nft.attributes.class === "Common" && "bg-purple-400"
+            rarityClass === "Common" && "bg-purple-400"
           } p-1 text-black shadow shadow-black`}
         ></div>
         <div className="relative bg-zinc-200 pb-3 text-black dark:bg-zinc-900 dark:text-white">
@@ -123,29 +152,29 @@ function NftCard({ nft }: any) {
             <div className="relative h-52 w-52">
               <div
                 className={`absolute top-2 -right-1 z-10 w-20 rounded-l-md rounded-tr-md text-center ${
-                  nft.attributes.class === "Super Rare" && "bg-orange-400"
-                } ${nft.attributes.class === "Rare" && "bg-green-400"} ${
-                  nft.attributes.class === "Uncommon" && "bg-blue-400"
+                  rarityClass === "Super Rare" && "bg-orange-400"
+                } ${rarityClass === "Rare" && "bg-green-400"} ${
+                  rarityClass === "Uncommon" && "bg-blue-400"
                 } ${
-                  nft.attributes.class === "Common" && "bg-purple-400"
+                  rarityClass === "Common" && "bg-purple-400"
                 } p-1 text-xs font-bold text-black shadow shadow-black`}
               >
-                {nft.attributes.class}
+                {rarityClass}
               </div>
               <Image
-                src={nft.attributes.image}
+                src={nft ? resolveURL(nft.image) : "/images/Loading.gif"}
                 layout="fill"
                 objectFit="contain"
               />
             </div>
-            <p>{`Lost Soul ${nft.attributes.tokenId}`}</p>
-            {nft.attributes.rank < 22 ? (
+            <p>{`Lost Soul ${nft.id}`}</p>
+            {nft.rarity_rank < 22 ? (
               <p>Rank #1</p>
             ) : (
-              <p>{`Rank #${nft.attributes.rank}`}</p>
+              <p>{`Rank #${nft.rarity_rank}`}</p>
             )}
 
-            <p>{`Quarks: ${nft.attributes.quarks / 1000}K`}</p>
+            <p>{`Quarks: ${nftQuarks / 1000}K`}</p>
           </div>
         </div>
       </div>
@@ -192,20 +221,22 @@ function NftCard({ nft }: any) {
                       as="h3"
                       className="text-lg font-medium leading-6 text-black dark:text-white"
                     >
-                      {`Lost Soul #${nft.attributes.tokenId}`}
+                      {`Lost Soul #${nft.id}`}
                     </Dialog.Title>
                     <div className="relative h-48 w-48">
                       <div className="absolute top-1 -left-1 z-50 rounded-r-md rounded-tl-md bg-green-400 p-1 text-xs font-bold text-black shadow shadow-black">
-                        {nft.attributes.rank < 22 ? (
+                        {nft.rarity_rank < 22 ? (
                           <p>Rank #1</p>
                         ) : (
-                          <p>{`Rank #${nft.attributes.rank}`}</p>
+                          <p>{`Rank #${nft.rarity_rank}`}</p>
                         )}
                       </div>
                       <div className="text-md absolute top-[4px] -left-1 h-8 w-[2px] rounded-l-lg bg-green-400 p-1 text-black shadow shadow-black"></div>
                       <Image
                         className="rounded-md"
-                        src={nft.attributes.image}
+                        src={
+                          nft ? resolveURL(nft.image) : "/images/Loading.gif"
+                        }
                         layout="fill"
                         objectFit="contain"
                       />
@@ -256,16 +287,16 @@ function NftCard({ nft }: any) {
                   <div className="flex flex-col justify-between space-y-1 divide-y divide-solid px-3 text-sm">
                     <div className="flex justify-between space-x-2">
                       <p className="font-bold">Score:</p>
-                      {nft.attributes.rank < 22 ? (
+                      {nft.rarity_score < 22 ? (
                         <p className="font-normal text-green-400">5000</p>
                       ) : (
-                        <p className="font-normal text-green-400">{`+${nft.attributes.rarity.toFixed(
+                        <p className="font-normal text-green-400">{`+${nft.rarity_score.toFixed(
                           2
                         )}`}</p>
                       )}
                     </div>
 
-                    {nft.attributes.attributes.map((e: any, index: number) => {
+                    {nft.attributes.map((e: any, index: number) => {
                       if (e.trait_type != "TraitCount") {
                         return (
                           <div
@@ -278,14 +309,9 @@ function NftCard({ nft }: any) {
                                 {e.value}
                               </p>
                             </div>
-
-                            {nft.attributes.rank < 22 ? (
-                              <p className="font-normal text-blue-400">+1000</p>
-                            ) : (
-                              <p className="font-normal text-blue-400">{`+${e.rarityScore.toFixed(
-                                2
-                              )}`}</p>
-                            )}
+                            <p className="font-normal text-blue-400">{`+${e.rarity_score.toFixed(
+                              2
+                            )}`}</p>
                           </div>
                         );
                       } else {
@@ -302,7 +328,7 @@ function NftCard({ nft }: any) {
                   <div>
                     <a
                       rel="noreferrer"
-                      href={`https://opensea.io/assets/0x0fb69d1dc9954a7f60e83023916f2551e24f52fc/${nft.attributes.tokenId}`}
+                      href={`https://opensea.io/assets/0x0fb69d1dc9954a7f60e83023916f2551e24f52fc/${nft.id}`}
                       className="focus:outline-none"
                       target="_blank"
                     >
