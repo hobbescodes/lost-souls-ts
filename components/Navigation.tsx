@@ -229,6 +229,7 @@ function Navigation() {
 
   //OnClick for Reset: first setNft(undefined) to clear nfts
   const reset = () => {
+    setNfts([]);
     resetNFTs();
     setErrorResult(false);
   };
