@@ -2,7 +2,7 @@ import { Menu, Transition } from "@headlessui/react";
 import { ChevronDownIcon, SearchIcon } from "@heroicons/react/outline";
 import { ethers } from "ethers";
 import { isAddress } from "ethers/lib/utils";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useState } from "react";
 import { useRecoilState } from "recoil";
 import { limitState } from "../atoms/LimitAtom";
 import { nftsState } from "../atoms/NftsAtom";

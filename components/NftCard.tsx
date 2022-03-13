@@ -12,6 +12,14 @@ function NftCard({ nft }: any) {
   const [rarityClass, setRarityClass] = useState("");
   const [nftQuarks, setNftQuarks] = useState(0);
 
+  //Average rarities calculated using Ecto API values
+  const averageRarity: number = 63.86656395406752;
+  const averageBackgroundRarity: number = 7.61745002100297;
+  const averageBodyRarity: number = 6.544656021003788;
+  const averageHeadwareRarity: number = 15.83153202100234;
+  const averageFaceRarity: number = 16.01325002100209;
+  const averageShirtRarity: number = 17.8596758700585;
+
   //Opens Modal for each NFT and triggers function to find owner of clicked NFT + that NFTs details
   function openModal() {
     setIsOpen(true);
@@ -105,6 +113,35 @@ function NftCard({ nft }: any) {
     } else {
       setRarityClass("Common");
       setNftQuarks(5000);
+    }
+  };
+
+  const compareRarity = (trait_type: string, rarity_score: number) => {
+    if (trait_type == "Background") {
+      return (
+        ((rarity_score - averageBackgroundRarity) / averageBackgroundRarity) *
+        100
+      ).toFixed(2);
+    } else if (trait_type == "Body") {
+      return (
+        ((rarity_score - averageBodyRarity) / averageBodyRarity) *
+        100
+      ).toFixed(2);
+    } else if (trait_type == "Headware") {
+      return (
+        ((rarity_score - averageHeadwareRarity) / averageHeadwareRarity) *
+        100
+      ).toFixed(2);
+    } else if (trait_type == "Face") {
+      return (
+        ((rarity_score - averageFaceRarity) / averageFaceRarity) *
+        100
+      ).toFixed(2);
+    } else {
+      return (
+        ((rarity_score - averageShirtRarity) / averageShirtRarity) *
+        100
+      ).toFixed(2);
     }
   };
 
@@ -277,7 +314,7 @@ function NftCard({ nft }: any) {
                       {nft.rarity_score < 22 ? (
                         <p className="font-normal text-green-400">5000</p>
                       ) : (
-                        <p className="font-normal text-green-400">{`+${nft.rarity_score.toFixed(
+                        <p className="font-normal text-green-400">{`${nft.rarity_score.toFixed(
                           2
                         )}`}</p>
                       )}
@@ -288,12 +325,29 @@ function NftCard({ nft }: any) {
                         return (
                           <div
                             key={index}
-                            className="flex justify-between space-x-8 space-y-2 py-2"
+                            className="flex items-center justify-between space-x-8 space-y-2 py-2"
                           >
                             <div className="flex flex-col">
                               <p className="font-bold">{e.trait_type}:</p>
                               <p className="text-xs font-bold text-gray-400">
                                 {e.value}
+                              </p>
+                              <p
+                                className={`text-xs font-normal ${
+                                  Number(
+                                    compareRarity(e.trait_type, e.rarity_score)
+                                  ) > 0
+                                    ? "text-green-400"
+                                    : "text-red-400"
+                                }`}
+                              >
+                                {Number(
+                                  compareRarity(e.trait_type, e.rarity_score)
+                                ) > 0
+                                  ? "+"
+                                  : null}
+                                {compareRarity(e.trait_type, e.rarity_score) +
+                                  "%"}
                               </p>
                             </div>
                             <p className="font-normal text-blue-400">{`+${e.rarity_score.toFixed(
