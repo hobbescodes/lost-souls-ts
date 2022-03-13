@@ -2,7 +2,7 @@ import { Menu, Transition } from "@headlessui/react";
 import { ChevronDownIcon, SearchIcon } from "@heroicons/react/outline";
 import { ethers } from "ethers";
 import { isAddress } from "ethers/lib/utils";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
 import { limitState } from "../atoms/LimitAtom";
 import { nftsState } from "../atoms/NftsAtom";
@@ -29,6 +29,7 @@ function Navigation() {
   const [totalLand, setTotalLand] = useRecoilState(totalLandState);
   const [errorResult, setErrorResult] = useRecoilState(errorResultState);
   const [addressTokenIds, setAddressTokenIds] = useState(empty);
+  const [listedTokenIds, setListedTokenIds] = useState(empty);
   const router = useRouter();
 
   const allHeadware = headware.sort();
@@ -75,6 +76,35 @@ function Navigation() {
       .catch((err) => console.error(err));
   };
 
+  //Finds all token IDs of currently listed Lost Souls
+  const findListed = () => {
+    const options = { method: "GET" };
+    let totalListedIds: string[] = [];
+
+    fetch(
+      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/pricing/detail`,
+      options
+    )
+      .then((response) => response.json())
+      .then((response) => {
+        for (let i = 0; i < response.common.length; i++) {
+          totalListedIds.push(response.common[i].tokenId);
+        }
+        for (let i = 0; i < response.uncommon.length; i++) {
+          totalListedIds.push(response.uncommon[i].tokenId);
+        }
+        for (let i = 0; i < response.rare.length; i++) {
+          totalListedIds.push(response.rare[i].tokenId);
+        }
+        for (let i = 0; i < response.superRare.length; i++) {
+          totalListedIds.push(response.superRare[i].tokenId);
+        }
+        setListedTokenIds(totalListedIds);
+        fetchTotalListedNFTs(totalListedIds);
+      })
+      .catch((err) => console.error(err));
+  };
+
   // Get Token IDs of each Lost Soul for a given wallet address
   const addressNFTs = async (address: string) => {
     const options = { method: "GET" };
@@ -92,6 +122,34 @@ function Navigation() {
         }
         setAddressTokenIds(addressTokenIds);
         fetchTotalAddressNFTs(addressTokenIds);
+      })
+      .catch((err) => console.error(err));
+  };
+
+  //Given an array of token IDs, fetches information about said NFTs
+  const fetchTotalListedNFTs = (tokenIdArray: string[]) => {
+    const options = { method: "GET" };
+    let totalListedNfts: any[] = [];
+
+    fetch(
+      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
+      options
+    )
+      .then((response) => response.json())
+      .then((response) => {
+        for (let i = 0; i < tokenIdArray.length; i++) {
+          for (let j = 0; j < response.length; j++) {
+            if (response[j].id == Number(tokenIdArray[i])) {
+              totalListedNfts.push(response[j]);
+            }
+          }
+        }
+        let finalNfts = totalListedNfts.sort(
+          (a, b) => a.rarity_rank - b.rarity_rank
+        );
+        setTotalQuarks(0);
+        //@ts-ignore
+        setNfts(finalNfts);
       })
       .catch((err) => console.error(err));
   };
@@ -149,7 +207,7 @@ function Navigation() {
         setNfts(response);
       })
       .catch((err) => console.error(err));
-    setLimit(44);
+    setLimit(10);
     setTotalQuarks(0);
     setTotalLand(0);
   };
@@ -172,7 +230,7 @@ function Navigation() {
   //OnClick for Address: 1) resets variables 2) Checks if input is a valid address or ENS domain, if not resets other variables
   const retrieveAddressNFTs = async () => {
     setNfts([]);
-    setLimit(44);
+    setLimit(10);
     setTotalQuarks(0);
     setErrorResult(false);
 
@@ -218,10 +276,20 @@ function Navigation() {
     }
   };
 
+  //onClick for listed NFTs: 1) resets variables, calls function to filter token IDs for listed Lost Souls
+  const retrieveListedNFTs = () => {
+    setNfts([]);
+    setErrorResult(false);
+    setLimit(10);
+    setTotalQuarks(0);
+    setTotalLand(0);
+    findListed();
+  };
+
   //OnClick for Filter menu: 1) resets variables, calls the filter function for given trait
   const retrieveFilteredNFTs = (index: number, traitValue: string) => {
     setErrorResult(false);
-    setLimit(44);
+    setLimit(10);
     setTotalQuarks(0);
     setTotalLand(0);
     filteredNFTs(index, traitValue);
@@ -254,6 +322,11 @@ function Navigation() {
         <div className="navBtnContainer mb-4 md:mb-0">
           <button className="navBtn" onClick={() => router.push("/whales")}>
             4,4
+          </button>
+        </div>
+        <div className="navBtnContainer mb-4 md:mb-0">
+          <button className="navBtn" onClick={() => retrieveListedNFTs()}>
+            Listed
           </button>
         </div>
       </div>

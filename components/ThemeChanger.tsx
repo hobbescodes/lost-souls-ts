@@ -15,7 +15,7 @@ function ThemeChanger() {
     <button
       aria-label="Toggle Dark Mode"
       type="button"
-      className="h-12 w-12 p-2"
+      className="h-7 w-7"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
     >
       {theme === "dark" ? <SunIcon /> : <MoonIcon />}

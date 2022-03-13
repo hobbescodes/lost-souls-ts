@@ -22,7 +22,7 @@ function Results() {
 
   //Updates the limit of NFTs displayed
   function updateLimit() {
-    setLimit(limit + 44);
+    setLimit(limit + 10);
   }
 
   // Gets all nfts in collection
