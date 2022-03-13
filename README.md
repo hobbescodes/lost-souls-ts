@@ -4,14 +4,21 @@ It provides utility to:
 1. Search by Token ID for individual rarity stats
 2. Search by address or ENS domain for comprehensive stats about a wallets LSS holdings
 3. Filter by attribute type
-4. Provides Rarity floor statistics fetched from the Ecto API about floor prices of a given rarity rank
-5. Provides a "Hall of Fame" of the top holders
-6. Provides current listing price of an individual token (if it is listed on OpenSea)
+4. Filter by the currently listed Lost Souls
+5. Provides Rarity floor statistics fetched from the Ecto API about floor prices of a given rarity rank
+6. Provides a "Hall of Fame" of the top holders
+7. Provides current listing price of an individual token (if it is listed on OpenSea)
 
 Some unique statistics (unique to the LSS collection) that it provides are:
 
 1. Total Quark value of a searched wallet address (or ENS domain)
 2. Total available land for a searched wallet address (or ENS domain)
+3. Comparative Trait Percentage:
+   - Calculated the Average Rarity score for each trait category
+   - Compares value of individual trait to the average for its category
+4. Comparative Listed Price Percentage:
+   - Calculates Average listing price for a given rarity class
+   - Compares listing price for individual NFT to the average within its defined rarity class
 
 The rarity rankings presented are put together to line up directly with Rarity Tools (given room for rounding).
 
