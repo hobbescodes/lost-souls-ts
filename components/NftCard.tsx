@@ -11,6 +11,7 @@ function NftCard({ nft }: any) {
   const [tokenPrice, setTokenPrice] = useState("");
   const [rarityClass, setRarityClass] = useState("");
   const [nftQuarks, setNftQuarks] = useState(0);
+  const [comparativePrice, setComparativePrice] = useState(0);
 
   //Average rarities calculated using Ecto API values
   const averageRarity: number = 63.86656395406752;
@@ -33,7 +34,62 @@ function NftCard({ nft }: any) {
     setOwner("");
     setIsCopied(false);
     setTokenPrice("");
+    setComparativePrice(0);
   }
+
+  const testPrices = (rank: string, tokenPrice: number) => {
+    let superRarePrices = 0;
+    let rarePrices = 0;
+    let uncommonPrices = 0;
+    let commonPrices = 0;
+    const options = { method: "GET" };
+
+    fetch(
+      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/pricing/detail`,
+      options
+    )
+      .then((response) => response.json())
+      .then((response) => {
+        response.superRare.map((superRare: any) => {
+          superRarePrices += Number(superRare.price);
+        });
+        response.rare.map((rare: any) => {
+          rarePrices += Number(rare.price);
+        });
+        response.uncommon.map((uncommon: any) => {
+          uncommonPrices += Number(uncommon.price);
+        });
+        response.common.map((common: any) => {
+          commonPrices += Number(common.price);
+        });
+        if (Number(rank) < 22) {
+          setComparativePrice(
+            ((tokenPrice - superRarePrices / response.superRare.length) /
+              (superRarePrices / response.superRare.length)) *
+              100
+          );
+        } else if (Number(rank) >= 22 && Number(rank) < 1402) {
+          setComparativePrice(
+            ((tokenPrice - rarePrices / response.rare.length) /
+              (rarePrices / response.rare.length)) *
+              100
+          );
+        } else if (Number(rank) >= 1401 && Number(rank) < 5001) {
+          setComparativePrice(
+            ((tokenPrice - uncommonPrices / response.uncommon.length) /
+              (uncommonPrices / response.uncommon.length)) *
+              100
+          );
+        } else {
+          setComparativePrice(
+            ((tokenPrice - commonPrices / response.common.length) /
+              (commonPrices / response.common.length)) *
+              100
+          );
+        }
+      })
+      .catch((err) => console.error(err));
+  };
 
   //Finds the current owner of a given NFT, provided a Token ID. Checks to see if there is an ENS domain attached to owner's wallet address
   const findOwner = async (tokenId: number) => {
@@ -86,6 +142,7 @@ function NftCard({ nft }: any) {
         if (response.listingStatus == "listed") {
           // console.log(response);
           setTokenPrice(response.msg.price);
+          testPrices(nft.rarity_rank, Number(response.msg.price));
         } else {
           // console.log(response);
           setTokenPrice("Not Listed");
@@ -298,7 +355,20 @@ function NftCard({ nft }: any) {
                               height={15}
                             />
                           ) : null}
-                          <p className="">{tokenPrice}</p>
+                          <p className="">
+                            {tokenPrice}
+                            <span
+                              className={`${
+                                comparativePrice > 0
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }`}
+                            >
+                              {comparativePrice != 0
+                                ? " " + comparativePrice.toFixed(2) + "%"
+                                : null}
+                            </span>
+                          </p>
                         </div>
                       </div>
                     ) : (
