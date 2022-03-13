@@ -37,6 +37,7 @@ function NftCard({ nft }: any) {
     setComparativePrice(0);
   }
 
+  //Finds average price based on rarity then compares that to the given tokenPrice based on its rarity rank
   const testPrices = (rank: string, tokenPrice: number) => {
     let superRarePrices = 0;
     let rarePrices = 0;
