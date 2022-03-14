@@ -14,7 +14,7 @@ function NftCard({ nft }: any) {
   const [comparativePrice, setComparativePrice] = useState(0);
 
   //Average rarities calculated using Ecto API values
-  const averageRarity: number = 63.86656395406752;
+  // const averageRarity: number = 63.86656395406752;
   const averageBackgroundRarity: number = 7.61745002100297;
   const averageBodyRarity: number = 6.544656021003788;
   const averageHeadwareRarity: number = 15.83153202100234;
@@ -36,61 +36,6 @@ function NftCard({ nft }: any) {
     setTokenPrice("");
     setComparativePrice(0);
   }
-
-  //Finds average price based on rarity then compares that to the given tokenPrice based on its rarity rank
-  const testPrices = (rank: string, tokenPrice: number) => {
-    let superRarePrices = 0;
-    let rarePrices = 0;
-    let uncommonPrices = 0;
-    let commonPrices = 0;
-    const options = { method: "GET" };
-
-    fetch(
-      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/pricing/detail`,
-      options
-    )
-      .then((response) => response.json())
-      .then((response) => {
-        response.superRare.map((superRare: any) => {
-          superRarePrices += Number(superRare.price);
-        });
-        response.rare.map((rare: any) => {
-          rarePrices += Number(rare.price);
-        });
-        response.uncommon.map((uncommon: any) => {
-          uncommonPrices += Number(uncommon.price);
-        });
-        response.common.map((common: any) => {
-          commonPrices += Number(common.price);
-        });
-        if (Number(rank) < 22) {
-          setComparativePrice(
-            ((tokenPrice - superRarePrices / response.superRare.length) /
-              (superRarePrices / response.superRare.length)) *
-              100
-          );
-        } else if (Number(rank) >= 22 && Number(rank) < 1402) {
-          setComparativePrice(
-            ((tokenPrice - rarePrices / response.rare.length) /
-              (rarePrices / response.rare.length)) *
-              100
-          );
-        } else if (Number(rank) >= 1401 && Number(rank) < 5001) {
-          setComparativePrice(
-            ((tokenPrice - uncommonPrices / response.uncommon.length) /
-              (uncommonPrices / response.uncommon.length)) *
-              100
-          );
-        } else {
-          setComparativePrice(
-            ((tokenPrice - commonPrices / response.common.length) /
-              (commonPrices / response.common.length)) *
-              100
-          );
-        }
-      })
-      .catch((err) => console.error(err));
-  };
 
   //Finds the current owner of a given NFT, provided a Token ID. Checks to see if there is an ENS domain attached to owner's wallet address
   const findOwner = async (tokenId: number) => {
@@ -139,13 +84,9 @@ function NftCard({ nft }: any) {
     )
       .then((response) => response.json())
       .then((response) => {
-        //console.log(response);
         if (response.listingStatus == "listed") {
-          // console.log(response);
           setTokenPrice(response.msg.price);
-          testPrices(nft.rarity_rank, Number(response.msg.price));
         } else {
-          // console.log(response);
           setTokenPrice("Not Listed");
         }
       })
@@ -244,9 +185,10 @@ function NftCard({ nft }: any) {
                 {rarityClass}
               </div>
               <Image
-                src={nft ? resolveURL(nft.image) : "/images/Loading.gif"}
+                src={resolveURL(nft.image)}
                 layout="fill"
                 objectFit="contain"
+                priority
               />
             </div>
             <p>{`Lost Soul ${nft.id}`}</p>
@@ -316,9 +258,7 @@ function NftCard({ nft }: any) {
                       <div className="text-md absolute top-[4px] -left-1 h-8 w-[2px] rounded-l-lg bg-green-400 p-1 text-black shadow shadow-black"></div>
                       <Image
                         className="rounded-md"
-                        src={
-                          nft ? resolveURL(nft.image) : "/images/Loading.gif"
-                        }
+                        src={resolveURL(nft.image)}
                         layout="fill"
                         objectFit="contain"
                       />
@@ -329,13 +269,9 @@ function NftCard({ nft }: any) {
                         className="group flex cursor-pointer flex-col items-center justify-center space-y-1"
                       >
                         <p className="text-green-400">Owner:</p>
-                        {owner.endsWith(".eth") ? (
-                          <p className="group-hover:underline">{owner}</p>
-                        ) : (
-                          <p className="group-hover:underline">
-                            {truncateHash(owner)}
-                          </p>
-                        )}
+                        <p className="group-hover:underline">
+                          {truncateHash(owner)}
+                        </p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center space-y-1">
@@ -382,53 +318,45 @@ function NftCard({ nft }: any) {
                   <div className="flex flex-col justify-between space-y-1 divide-y divide-solid px-3 text-sm">
                     <div className="flex justify-between space-x-2">
                       <p className="font-bold">Score:</p>
-                      {nft.rarity_score < 22 ? (
-                        <p className="font-normal text-green-400">5000</p>
-                      ) : (
-                        <p className="font-normal text-green-400">{`${nft.rarity_score.toFixed(
-                          2
-                        )}`}</p>
-                      )}
+                      <p className="font-normal text-green-400">
+                        {nft.rarity_score.toFixed(2)}
+                      </p>
                     </div>
 
                     {nft.attributes.map((e: any, index: number) => {
-                      if (e.trait_type != "TraitCount") {
-                        return (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between space-x-8 space-y-2 py-2"
-                          >
-                            <div className="flex flex-col">
-                              <p className="font-bold">{e.trait_type}:</p>
-                              <p className="text-xs font-bold text-gray-400">
-                                {e.value}
-                              </p>
-                              <p
-                                className={`text-xs font-normal ${
-                                  Number(
-                                    compareRarity(e.trait_type, e.rarity_score)
-                                  ) > 0
-                                    ? "text-green-400"
-                                    : "text-red-400"
-                                }`}
-                              >
-                                {Number(
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between space-x-8 space-y-2 py-2"
+                        >
+                          <div className="flex flex-col">
+                            <p className="font-bold">{e.trait_type}:</p>
+                            <p className="text-xs font-bold text-gray-400">
+                              {e.value}
+                            </p>
+                            <p
+                              className={`text-xs font-normal ${
+                                Number(
                                   compareRarity(e.trait_type, e.rarity_score)
                                 ) > 0
-                                  ? "+"
-                                  : null}
-                                {compareRarity(e.trait_type, e.rarity_score) +
-                                  "%"}
-                              </p>
-                            </div>
-                            <p className="font-normal text-blue-400">{`+${e.rarity_score.toFixed(
-                              2
-                            )}`}</p>
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }`}
+                            >
+                              {Number(
+                                compareRarity(e.trait_type, e.rarity_score)
+                              ) > 0
+                                ? "+"
+                                : null}
+                              {compareRarity(e.trait_type, e.rarity_score) +
+                                "%"}
+                            </p>
                           </div>
-                        );
-                      } else {
-                        return null;
-                      }
+                          <p className="font-normal text-blue-400">{`+${e.rarity_score.toFixed(
+                            2
+                          )}`}</p>
+                        </div>
+                      );
                     })}
                   </div>
                 </div>

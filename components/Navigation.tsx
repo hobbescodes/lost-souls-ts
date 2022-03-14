@@ -18,12 +18,13 @@ import ThemeChanger from "./ThemeChanger";
 import { totalLandState } from "../atoms/LandAtom";
 import { useRouter } from "next/router";
 import { errorResultState } from "../atoms/ErrorResult";
+import { allNftsState } from "../atoms/allNftsAtom";
 
 function Navigation() {
   const empty: string[] = [];
   const [tokenOrAddress, setTokenOrAddress] = useState("");
   const [nfts, setNfts] = useRecoilState(nftsState);
-  const [finalAddressNfts, setFinalAddressNfts] = useState(empty);
+  const [allNfts, setAllNfts] = useRecoilState(allNftsState);
   const [limit, setLimit] = useRecoilState(limitState);
   const [totalQuarks, setTotalQuarks] = useRecoilState(totalQuarksState);
   const [totalLand, setTotalLand] = useRecoilState(totalLandState);
@@ -42,44 +43,26 @@ function Navigation() {
   const getNFT = (tokenId: number) => {
     setNfts([]);
 
-    const options = { method: "GET" };
-
-    fetch(
-      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
-      options
-    )
-      .then((response) => response.json())
-      .then((response) => {
-        let singleNFT = response.filter((nft: any) => nft.id === tokenId);
-        setNfts(singleNFT);
-      })
-      .catch((err) => console.error(err));
+    let singleNFT = allNfts.filter((nft: any) => nft.id === tokenId);
+    setNfts(singleNFT);
   };
 
   // Filter NFTs by specified trait value
   const filteredNFTs = async (index: number, traitValue: string) => {
     setNfts([]);
 
-    const options = { method: "GET" };
-
-    fetch(
-      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
-      options
-    )
-      .then((response) => response.json())
-      .then((response) => {
-        let filteredNFTs = response.filter(
-          (nft: any) => nft.attributes[index].value === traitValue
-        );
-        setNfts(filteredNFTs);
-      })
-      .catch((err) => console.error(err));
+    let filteredNFTs = allNfts.filter(
+      (nft: any) => nft.attributes[index].value === traitValue
+    );
+    setNfts(filteredNFTs);
   };
 
-  //Finds all token IDs of currently listed Lost Souls
+  //Finds all token IDs of currently listed Lost Souls, and then sets NFTs to those specific token IDs
   const findListed = () => {
     const options = { method: "GET" };
     let totalListedIds: string[] = [];
+    let totalListedNfts: any[] = [];
+    let totalNfts: any[] = allNfts;
 
     fetch(
       `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/pricing/detail`,
@@ -100,7 +83,21 @@ function Navigation() {
           totalListedIds.push(response.superRare[i].tokenId);
         }
         setListedTokenIds(totalListedIds);
-        fetchTotalListedNFTs(totalListedIds);
+
+        for (let i = 0; i < totalListedIds.length; i++) {
+          for (let j = 0; j < totalNfts.length; j++) {
+            if (totalNfts[j].id == Number(totalListedIds[i])) {
+              totalListedNfts.push(totalNfts[j]);
+            }
+          }
+        }
+
+        let finalListedNfts = totalListedNfts.sort(
+          (a, b) => a.rarity_rank - b.rarity_rank
+        );
+        setTotalQuarks(0);
+        //@ts-ignore
+        setNfts(finalListedNfts);
       })
       .catch((err) => console.error(err));
   };
@@ -109,6 +106,8 @@ function Navigation() {
   const addressNFTs = async (address: string) => {
     const options = { method: "GET" };
     let addressTokenIds: string[] = [];
+    let totalAddressNfts: any[] = [];
+    let totalNfts: any[] = allNfts;
 
     fetch(
       `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/address/${address}`,
@@ -116,65 +115,32 @@ function Navigation() {
     )
       .then((response) => response.json())
       .then((response) => {
-        // console.log(response);
+        setTotalLand(response.totalAvailableLand);
         for (let i = 0; i < response.ownedNotListed.length; i++) {
           addressTokenIds.push(response.ownedNotListed[i]);
         }
+        // Ecto API currently has all owned token IDs in the ownedNotListed array
+        // To my knowledge that will be changing to only provided the token IDs for the Souls owned by a specific address that are NOT currently listed
+        // When that happens, TODO:
+        // for (let j = 0; j < response.listed.length; j++) {
+        //   addressTokenIds.push(response.listed[j]);
+        // }
+        // Adding this will allow for a comprehensive list of token IDs for a given address
+        // Until then, the ownedNotListed array itself works for this purpose
         setAddressTokenIds(addressTokenIds);
-        fetchTotalAddressNFTs(addressTokenIds);
-      })
-      .catch((err) => console.error(err));
-  };
 
-  //Given an array of token IDs, fetches information about said NFTs
-  const fetchTotalListedNFTs = (tokenIdArray: string[]) => {
-    const options = { method: "GET" };
-    let totalListedNfts: any[] = [];
-
-    fetch(
-      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
-      options
-    )
-      .then((response) => response.json())
-      .then((response) => {
-        for (let i = 0; i < tokenIdArray.length; i++) {
-          for (let j = 0; j < response.length; j++) {
-            if (response[j].id == Number(tokenIdArray[i])) {
-              totalListedNfts.push(response[j]);
+        for (let i = 0; i < addressTokenIds.length; i++) {
+          for (let j = 0; j < totalNfts.length; j++) {
+            if (totalNfts[j].id == Number(addressTokenIds[i])) {
+              totalAddressNfts.push(totalNfts[j]);
             }
           }
         }
-        let finalNfts = totalListedNfts.sort(
-          (a, b) => a.rarity_rank - b.rarity_rank
-        );
-        setTotalQuarks(0);
-        //@ts-ignore
-        setNfts(finalNfts);
-      })
-      .catch((err) => console.error(err));
-  };
 
-  //Given an array of token IDs, fetches information about said NFTs for a given wallet
-  const fetchTotalAddressNFTs = (tokenIdArray: string[]) => {
-    const options = { method: "GET" };
-    let totalAddressNfts: any[] = [];
-
-    fetch(
-      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
-      options
-    )
-      .then((response) => response.json())
-      .then((response) => {
-        for (let i = 0; i < tokenIdArray.length; i++) {
-          for (let j = 0; j < response.length; j++) {
-            if (response[j].id == Number(tokenIdArray[i])) {
-              totalAddressNfts.push(response[j]);
-            }
-          }
-        }
         let finalNfts = totalAddressNfts.sort(
           (a, b) => a.rarity_rank - b.rarity_rank
         );
+
         let totalQuarks = 0;
         totalAddressNfts.forEach((nft) => {
           if (nft.rarity_rank < 22) {
@@ -196,35 +162,11 @@ function Navigation() {
 
   //Reset function to eliminate any filters
   const resetNFTs = async () => {
-    const options = { method: "GET" };
-
-    fetch(
-      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/rarity`,
-      options
-    )
-      .then((response) => response.json())
-      .then((response) => {
-        setNfts(response);
-      })
-      .catch((err) => console.error(err));
+    setNfts(allNfts);
     setLimit(10);
     setTotalQuarks(0);
     setTotalLand(0);
-  };
-
-  //Fetches the total Available Land for a given address using the Ecto API
-  const addressDetails = (ownerAddress: string) => {
-    const options = { method: "GET" };
-
-    fetch(
-      `${process.env.NEXT_PUBLIC_PROXY_URL}https://test.ecto.xyz/analytics/address/${ownerAddress}`,
-      options
-    )
-      .then((response) => response.json())
-      .then((response) => {
-        setTotalLand(response.totalAvailableLand);
-      })
-      .catch((err) => console.error(err));
+    setErrorResult(false);
   };
 
   //OnClick for Address: 1) resets variables 2) Checks if input is a valid address or ENS domain, if not resets other variables
@@ -236,7 +178,6 @@ function Navigation() {
 
     if (isAddress(tokenOrAddress) == true) {
       addressNFTs(tokenOrAddress);
-      addressDetails(tokenOrAddress);
     } else {
       try {
         //@ts-ignore
@@ -244,7 +185,6 @@ function Navigation() {
         const address = await web3Provider.resolveName(tokenOrAddress);
         if (address != null) {
           addressNFTs(address);
-          addressDetails(address);
         } else {
           setTotalQuarks(0);
           setTotalLand(0);
@@ -260,6 +200,7 @@ function Navigation() {
 
   //OnClick for Find a Soul: 1) reset variables, 2) Checks if input is a valid integer 1-9999 (valid token ID), if not reset other variables
   const retrieveNFT = () => {
+    setNfts([]);
     setTotalQuarks(0);
     setTotalLand(0);
     setErrorResult(false);
@@ -288,6 +229,7 @@ function Navigation() {
 
   //OnClick for Filter menu: 1) resets variables, calls the filter function for given trait
   const retrieveFilteredNFTs = (index: number, traitValue: string) => {
+    setNfts([]);
     setErrorResult(false);
     setLimit(10);
     setTotalQuarks(0);
@@ -298,8 +240,11 @@ function Navigation() {
   //OnClick for Reset: first setNft(undefined) to clear nfts
   const reset = () => {
     setNfts([]);
-    resetNFTs();
+    setTotalQuarks(0);
+    setTotalLand(0);
+    setLimit(10);
     setErrorResult(false);
+    resetNFTs();
   };
 
   return (

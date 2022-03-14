@@ -10,6 +10,7 @@ import { ArrowLeftIcon } from "@heroicons/react/outline";
 import { useRecoilState } from "recoil";
 import { nftsState } from "../atoms/NftsAtom";
 import { ethers } from "ethers";
+import { limitState } from "../atoms/LimitAtom";
 
 const Whales: NextPage = () => {
   const empty: string[] = [];
@@ -17,6 +18,7 @@ const Whales: NextPage = () => {
   const [finalWhales, setFinalWhales] = useState(empty);
   const [isVisible, setIsVisible] = useState(false);
   const [nfts, setNfts] = useRecoilState(nftsState);
+  const [limit, setLimit] = useRecoilState(limitState);
   const router = useRouter();
 
   //Truncates an address to the form of 0xEEEEE..EEEEEEE
@@ -75,6 +77,7 @@ const Whales: NextPage = () => {
 
   const goHome = () => {
     setNfts([]);
+    setLimit(10);
     router.push("/");
   };
 

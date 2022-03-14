@@ -8,6 +8,7 @@ import Image from "next/image";
 import { totalQuarksState } from "../atoms/QuarksAtom";
 import { totalLandState } from "../atoms/LandAtom";
 import { errorResultState } from "../atoms/ErrorResult";
+import { allNftsState } from "../atoms/allNftsAtom";
 
 function Results() {
   const [limit, setLimit] = useRecoilState(limitState);
@@ -15,6 +16,7 @@ function Results() {
   const [totalLand, setTotalLand] = useRecoilState(totalLandState);
   const [errorResult, setErrorResult] = useRecoilState(errorResultState);
   const [nfts, setNfts] = useRecoilState(nftsState);
+  const [allNfts, setAllNfts] = useRecoilState(allNftsState);
   const [commonPrice, setCommonPrice] = useState("");
   const [uncommonPrice, setUncommonPrice] = useState("");
   const [rarePrice, setRarePrice] = useState("");
@@ -35,8 +37,8 @@ function Results() {
     )
       .then((response) => response.json())
       .then((response) => {
-        // console.log(response);
         setNfts(response);
+        setAllNfts(response);
       })
       .catch((err) => console.error(err));
   };
@@ -51,7 +53,6 @@ function Results() {
     )
       .then((response) => response.json())
       .then((response) => {
-        //console.log(response);
         setCommonPrice(response.commonPrice.price);
         setUncommonPrice(response.uncommonPrice.price);
         setRarePrice(response.rarePrice.price);
