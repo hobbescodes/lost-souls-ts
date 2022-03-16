@@ -5,6 +5,7 @@ It provides utility to:
 2. Search by address or ENS domain for comprehensive stats about a wallets LSS holdings
 3. Filter by attribute type
 4. Filter by the currently listed Lost Souls
+   - When filtered by currently listed Lost Souls, you can filter again by Individual rarity classes
 5. Provides Rarity floor statistics fetched from the Ecto API about floor prices of a given rarity rank
 6. Provides a "Hall of Fame" of the top holders
 7. Provides current listing price of an individual token (if it is listed on OpenSea)
