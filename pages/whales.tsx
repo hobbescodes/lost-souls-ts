@@ -11,6 +11,7 @@ import { useRecoilState } from "recoil";
 import { nftsState } from "../atoms/NftsAtom";
 import { ethers } from "ethers";
 import { limitState } from "../atoms/LimitAtom";
+import { showListedState } from "../atoms/ShowListedAtom";
 
 const Whales: NextPage = () => {
   const empty: string[] = [];
@@ -19,6 +20,7 @@ const Whales: NextPage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [nfts, setNfts] = useRecoilState(nftsState);
   const [limit, setLimit] = useRecoilState(limitState);
+  const [showListed, setShowListed] = useRecoilState(showListedState);
   const router = useRouter();
 
   //Truncates an address to the form of 0xEEEEE..EEEEEEE
@@ -78,6 +80,7 @@ const Whales: NextPage = () => {
   const goHome = () => {
     setNfts([]);
     setLimit(10);
+    setShowListed(false);
     router.push("/");
   };
 

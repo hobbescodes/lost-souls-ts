@@ -19,18 +19,29 @@ import { totalLandState } from "../atoms/LandAtom";
 import { useRouter } from "next/router";
 import { errorResultState } from "../atoms/ErrorResult";
 import { allNftsState } from "../atoms/allNftsAtom";
+import { showListedState } from "../atoms/ShowListedAtom";
+import { commonListedState } from "../atoms/CommonListedAtom";
+import { uncommonListedState } from "../atoms/UncommonListedAtom";
+import { rareListedState } from "../atoms/RareListedAtom";
+import { superRareListedState } from "../atoms/SuperRareListedAtom";
 
 function Navigation() {
-  const empty: string[] = [];
+  const empty: any[] = [];
   const [tokenOrAddress, setTokenOrAddress] = useState("");
   const [nfts, setNfts] = useRecoilState(nftsState);
   const [allNfts, setAllNfts] = useRecoilState(allNftsState);
+  const [commonListed, setCommonListed] = useRecoilState(commonListedState);
+  const [uncommonListed, setUncommonListed] =
+    useRecoilState(uncommonListedState);
+  const [rareListed, setRareListed] = useRecoilState(rareListedState);
+  const [superRareListed, setSuperRareListed] =
+    useRecoilState(superRareListedState);
+  const [showListed, setShowListed] = useRecoilState(showListedState);
   const [limit, setLimit] = useRecoilState(limitState);
   const [totalQuarks, setTotalQuarks] = useRecoilState(totalQuarksState);
   const [totalLand, setTotalLand] = useRecoilState(totalLandState);
   const [errorResult, setErrorResult] = useRecoilState(errorResultState);
   const [addressTokenIds, setAddressTokenIds] = useState(empty);
-  const [listedTokenIds, setListedTokenIds] = useState(empty);
   const router = useRouter();
 
   const allHeadware = headware.sort();
@@ -60,8 +71,13 @@ function Navigation() {
   //Finds all token IDs of currently listed Lost Souls, and then sets NFTs to those specific token IDs
   const findListed = () => {
     const options = { method: "GET" };
-    let totalListedIds: string[] = [];
+    let totalListed: any[] = [];
     let totalListedNfts: any[] = [];
+    let superRares: any[] = [];
+    let rares: any[] = [];
+    let uncommons: any[] = [];
+    let commons: any[] = [];
+
     let totalNfts: any[] = allNfts;
 
     fetch(
@@ -70,34 +86,71 @@ function Navigation() {
     )
       .then((response) => response.json())
       .then((response) => {
-        for (let i = 0; i < response.common.length; i++) {
-          totalListedIds.push(response.common[i].tokenId);
-        }
-        for (let i = 0; i < response.uncommon.length; i++) {
-          totalListedIds.push(response.uncommon[i].tokenId);
-        }
-        for (let i = 0; i < response.rare.length; i++) {
-          totalListedIds.push(response.rare[i].tokenId);
-        }
-        for (let i = 0; i < response.superRare.length; i++) {
-          totalListedIds.push(response.superRare[i].tokenId);
-        }
-        setListedTokenIds(totalListedIds);
+        response.common.map((common: any) => {
+          totalListed.push({
+            tokenId: common.tokenId,
+            price: common.price,
+          });
+        });
+        response.uncommon.map((uncommon: any) => {
+          totalListed.push({
+            tokenId: uncommon.tokenId,
+            price: uncommon.price,
+          });
+        });
+        response.rare.map((rare: any) => {
+          totalListed.push({
+            tokenId: rare.tokenId,
+            price: rare.price,
+          });
+        });
+        response.superRare.map((superRare: any) => {
+          totalListed.push({
+            tokenId: superRare.tokenId,
+            price: superRare.price,
+          });
+        });
 
-        for (let i = 0; i < totalListedIds.length; i++) {
+        let orderedListed = totalListed.sort((a, b) => a.price - b.price);
+
+        for (let i = 0; i < orderedListed.length; i++) {
           for (let j = 0; j < totalNfts.length; j++) {
-            if (totalNfts[j].id == Number(totalListedIds[i])) {
+            if (totalNfts[j].id == Number(orderedListed[i].tokenId)) {
               totalListedNfts.push(totalNfts[j]);
             }
           }
         }
 
-        let finalListedNfts = totalListedNfts.sort(
-          (a, b) => a.rarity_rank - b.rarity_rank
-        );
+        for (let k = 0; k < totalListedNfts.length; k++) {
+          if (totalListedNfts[k].rarity_rank < 22) {
+            superRares.push(totalListedNfts[k]);
+          } else if (
+            totalListedNfts[k].rarity_rank >= 22 &&
+            totalListedNfts[k].rarity_rank < 1402
+          ) {
+            rares.push(totalListedNfts[k]);
+          } else if (
+            totalListedNfts[k].rarity_rank >= 1402 &&
+            totalListedNfts[k].rarity_rank < 5001
+          ) {
+            uncommons.push(totalListedNfts[k]);
+          } else {
+            commons.push(totalListedNfts[k]);
+          }
+        }
+
+        //@ts-ignore
+        setSuperRareListed(superRares);
+        //@ts-ignore
+        setRareListed(rares);
+        //@ts-ignore
+        setUncommonListed(uncommons);
+        //@ts-ignore
+        setCommonListed(commons);
+
         setTotalQuarks(0);
         //@ts-ignore
-        setNfts(finalListedNfts);
+        setNfts(totalListedNfts);
       })
       .catch((err) => console.error(err));
   };
@@ -167,6 +220,7 @@ function Navigation() {
     setTotalQuarks(0);
     setTotalLand(0);
     setErrorResult(false);
+    setShowListed(false);
   };
 
   //OnClick for Address: 1) resets variables 2) Checks if input is a valid address or ENS domain, if not resets other variables
@@ -175,6 +229,7 @@ function Navigation() {
     setLimit(10);
     setTotalQuarks(0);
     setErrorResult(false);
+    setShowListed(false);
 
     if (isAddress(tokenOrAddress) == true) {
       addressNFTs(tokenOrAddress);
@@ -189,11 +244,13 @@ function Navigation() {
           setTotalQuarks(0);
           setTotalLand(0);
           setErrorResult(true);
+          setShowListed(false);
         }
       } catch {
         setTotalQuarks(0);
         setTotalLand(0);
         setErrorResult(true);
+        setShowListed(false);
       }
     }
   };
@@ -204,6 +261,7 @@ function Navigation() {
     setTotalQuarks(0);
     setTotalLand(0);
     setErrorResult(false);
+    setShowListed(false);
     if (
       Number(tokenOrAddress) % 1 == 0 &&
       Number(tokenOrAddress) > 0 &&
@@ -225,6 +283,7 @@ function Navigation() {
     setTotalQuarks(0);
     setTotalLand(0);
     findListed();
+    setShowListed(true);
   };
 
   //OnClick for Filter menu: 1) resets variables, calls the filter function for given trait
@@ -234,6 +293,7 @@ function Navigation() {
     setLimit(10);
     setTotalQuarks(0);
     setTotalLand(0);
+    setShowListed(false);
     filteredNFTs(index, traitValue);
   };
 
@@ -243,6 +303,7 @@ function Navigation() {
     setTotalQuarks(0);
     setTotalLand(0);
     setLimit(10);
+    setShowListed(false);
     setErrorResult(false);
     resetNFTs();
   };

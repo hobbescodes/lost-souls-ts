@@ -9,6 +9,13 @@ import { totalQuarksState } from "../atoms/QuarksAtom";
 import { totalLandState } from "../atoms/LandAtom";
 import { errorResultState } from "../atoms/ErrorResult";
 import { allNftsState } from "../atoms/allNftsAtom";
+import { showListedState } from "../atoms/ShowListedAtom";
+import { commonListedState } from "../atoms/CommonListedAtom";
+import { uncommonListedState } from "../atoms/UncommonListedAtom";
+import { rareListedState } from "../atoms/RareListedAtom";
+import { superRareListedState } from "../atoms/SuperRareListedAtom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function Results() {
   const [limit, setLimit] = useRecoilState(limitState);
@@ -16,11 +23,29 @@ function Results() {
   const [totalLand, setTotalLand] = useRecoilState(totalLandState);
   const [errorResult, setErrorResult] = useRecoilState(errorResultState);
   const [nfts, setNfts] = useRecoilState(nftsState);
+  const [commonListed, setCommonListed] = useRecoilState(commonListedState);
+  const [uncommonListed, setUncommonListed] =
+    useRecoilState(uncommonListedState);
+  const [rareListed, setRareListed] = useRecoilState(rareListedState);
+  const [superRareListed, setSuperRareListed] =
+    useRecoilState(superRareListedState);
+  const [showListed, setShowListed] = useRecoilState(showListedState);
   const [allNfts, setAllNfts] = useRecoilState(allNftsState);
   const [commonPrice, setCommonPrice] = useState("");
   const [uncommonPrice, setUncommonPrice] = useState("");
   const [rarePrice, setRarePrice] = useState("");
   const [superRarePrice, setSuperRarePrice] = useState("");
+
+  const notify = (rarityClass: string) =>
+    toast.info(`There are currently no ${rarityClass} listed!`, {
+      position: "bottom-center",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
 
   //Updates the limit of NFTs displayed
   function updateLimit() {
@@ -69,6 +94,10 @@ function Results() {
     getNFTs();
   }, []);
 
+  useEffect(() => {
+    console.log(superRareListed);
+  }, [superRareListed]);
+
   return (
     <div className="relative mx-auto mb-12 flex flex-col items-center space-y-4">
       {nfts != [] && !errorResult ? (
@@ -97,90 +126,184 @@ function Results() {
           ) : (
             <div>
               {nfts.length > 1 ? (
-                <div className="flex flex-col items-center justify-center space-y-1">
-                  <div className="flex flex-col space-y-3 md:flex-row md:space-y-0 md:space-x-2">
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="statsContainer mt-8">
-                        <p className="statsTitle px-[22px]">Common</p>
-                        <div className="flex space-x-2 p-2">
-                          {commonPrice != "None-listed" ? (
-                            <>
-                              <Image
-                                className=""
-                                src="/images/eth-logo.png"
-                                width={15}
-                                height={15}
-                              />
-                              <p className="">{commonPrice}</p>
-                            </>
-                          ) : (
-                            <p className="">None Listed</p>
-                          )}
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col items-center justify-center space-y-1">
+                    <div className="flex flex-col space-y-3 md:flex-row md:space-y-0 md:space-x-2">
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="statsContainer mt-8">
+                          <p className="statsTitle px-[22px]">Common</p>
+                          <div className="flex space-x-2 p-2">
+                            {commonPrice != "None-listed" ? (
+                              <>
+                                <Image
+                                  className=""
+                                  src="/images/eth-logo.png"
+                                  width={15}
+                                  height={15}
+                                />
+                                <p className="">{commonPrice}</p>
+                              </>
+                            ) : (
+                              <p className="">None Listed</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="statsContainer mt-8">
+                          <p className="statsTitle px-[16px]">Uncommon</p>
+                          <div className="flex space-x-2 p-2">
+                            {uncommonPrice != "None-listed" ? (
+                              <>
+                                <Image
+                                  className=""
+                                  src="/images/eth-logo.png"
+                                  width={15}
+                                  height={15}
+                                />
+                                <p className="">{uncommonPrice}</p>
+                              </>
+                            ) : (
+                              <p className="">None Listed</p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="statsContainer mt-8">
-                        <p className="statsTitle px-[16px]">Uncommon</p>
-                        <div className="flex space-x-2 p-2">
-                          {uncommonPrice != "None-listed" ? (
-                            <>
-                              <Image
-                                className=""
-                                src="/images/eth-logo.png"
-                                width={15}
-                                height={15}
-                              />
-                              <p className="">{uncommonPrice}</p>
-                            </>
-                          ) : (
-                            <p className="">None Listed</p>
-                          )}
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="statsContainer mt-0 md:mt-8">
+                          <p className="statsTitle px-[26px]">Rare</p>
+                          <div className="flex space-x-2 p-2">
+                            {rarePrice != "None-listed" ? (
+                              <>
+                                <Image
+                                  className=""
+                                  src="/images/eth-logo.png"
+                                  width={15}
+                                  height={15}
+                                />
+                                <p className="">{rarePrice}</p>
+                              </>
+                            ) : (
+                              <p className="">None Listed</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="statsContainer mt-0 md:mt-8">
+                          <p className="statsTitle px-[16px]">Super Rare</p>
+                          <div className="flex space-x-2 p-2">
+                            {superRarePrice != "None-listed" ? (
+                              <>
+                                <Image
+                                  className=""
+                                  src="/images/eth-logo.png"
+                                  width={15}
+                                  height={15}
+                                />
+                                <p className="">{superRarePrice}</p>
+                              </>
+                            ) : (
+                              <p className="">None Listed</p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="statsContainer mt-0 md:mt-8">
-                        <p className="statsTitle px-[26px]">Rare</p>
-                        <div className="flex space-x-2 p-2">
-                          {rarePrice != "None-listed" ? (
-                            <>
-                              <Image
-                                className=""
-                                src="/images/eth-logo.png"
-                                width={15}
-                                height={15}
-                              />
-                              <p className="">{rarePrice}</p>
-                            </>
-                          ) : (
-                            <p className="">None Listed</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="statsContainer mt-0 md:mt-8">
-                        <p className="statsTitle px-[16px]">Super Rare</p>
-                        <div className="flex space-x-2 p-2">
-                          {superRarePrice != "None-listed" ? (
-                            <>
-                              <Image
-                                className=""
-                                src="/images/eth-logo.png"
-                                width={15}
-                                height={15}
-                              />
-                              <p className="">{superRarePrice}</p>
-                            </>
-                          ) : (
-                            <p className="">None Listed</p>
-                          )}
-                        </div>
-                      </div>
+                    <div>
+                      <h1 className="text-xs text-black dark:text-white">
+                        Floor prices fetched from Ecto API
+                      </h1>
                     </div>
                   </div>
-                  <div>
-                    <h1 className="text-xs text-black dark:text-white">
-                      Floor prices fetched from Ecto API
-                    </h1>
-                  </div>
+                  {showListed ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      {commonListed.length > 0 ? (
+                        <div className="navBtnContainer mb-4 md:mb-0">
+                          <button
+                            className="navBtn"
+                            onClick={() => setNfts(commonListed)}
+                          >
+                            Common
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="navBtnContainer mb-4 md:mb-0">
+                          <button
+                            className="navBtn"
+                            onClick={() => notify("Commons")}
+                          >
+                            Common
+                          </button>
+                        </div>
+                      )}
+                      {uncommonListed.length > 0 ? (
+                        <div className="navBtnContainer mb-4 md:mb-0">
+                          <button
+                            className="navBtn"
+                            onClick={() => setNfts(uncommonListed)}
+                          >
+                            Uncommon
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="navBtnContainer mb-4 md:mb-0">
+                          <button
+                            className="navBtn"
+                            onClick={() => notify("Uncommons")}
+                          >
+                            Uncommon
+                          </button>
+                        </div>
+                      )}
+                      {rareListed.length > 0 ? (
+                        <div className="navBtnContainer mb-4 md:mb-0">
+                          <button
+                            className="navBtn"
+                            onClick={() => setNfts(rareListed)}
+                          >
+                            Rare
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="navBtnContainer mb-4 md:mb-0">
+                          <button
+                            className="navBtn"
+                            onClick={() => notify("Rares")}
+                          >
+                            Rare
+                          </button>
+                        </div>
+                      )}
+                      {superRareListed.length > 0 ? (
+                        <div className="navBtnContainer mb-4 md:mb-0">
+                          <button
+                            className="navBtn"
+                            onClick={() => setNfts(superRareListed)}
+                          >
+                            Super Rare
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="navBtnContainer mb-4 md:mb-0">
+                          <button
+                            className="navBtn"
+                            onClick={() => notify("Super Rares")}
+                          >
+                            Super Rare
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                  <ToastContainer
+                    position="bottom-center"
+                    theme="colored"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                  />
                 </div>
               ) : null}
             </div>
